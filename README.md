@@ -25,7 +25,7 @@ A web application that allows users to search HTML content from websites using s
 - Python 3.9 or higher
 - Node.js 16 or higher and npm
 
-## Setup
+## Local Development Setup
 
 ### Backend Setup
 
@@ -79,9 +79,70 @@ npm start
 
 The frontend will be available at `http://localhost:3000`.
 
+## Production Deployment
+
+### Frontend Deployment on Vercel
+
+1. **Install Vercel CLI** (if not already installed):
+```bash
+npm i -g vercel
+```
+
+2. **Navigate to frontend directory**:
+```bash
+cd frontend
+```
+
+3. **Set environment variable**:
+   - Go to your Vercel project settings
+   - Add environment variable: `REACT_APP_API_URL` = `https://your-backend-url.onrender.com`
+
+4. **Deploy**:
+```bash
+vercel
+```
+Or connect your GitHub repository to Vercel for automatic deployments.
+
+5. **Build Settings** (if using Vercel dashboard):
+   - Framework Preset: Create React App
+   - Build Command: `npm run build`
+   - Output Directory: `build`
+   - Install Command: `npm install`
+
+### Backend Deployment on Render
+
+1. **Create a new Web Service** on Render:
+   - Connect your GitHub repository
+   - Select the `backend` directory as the root directory
+
+2. **Configure Build Settings**:
+   - Build Command: `pip install -r requirements.txt && python manage.py migrate`
+   - Start Command: `gunicorn project_settings.wsgi:application`
+
+3. **Set Environment Variables**:
+   ```
+   DEBUG=False
+   SECRET_KEY=your-secret-key-here
+   ALLOWED_HOSTS=your-app-name.onrender.com
+   CORS_ALLOWED_ORIGINS=https://your-frontend-app.vercel.app
+   ```
+
+4. **Add Gunicorn to requirements.txt** (if not already present):
+   ```
+   gunicorn>=21.2.0
+   ```
+
+5. **Deploy**: Render will automatically deploy when you push to your repository.
+
+### Important Notes
+
+- **No Pinecone Required**: This application uses in-memory storage, so no external vector database setup is needed.
+- **CORS Configuration**: Make sure to set `CORS_ALLOWED_ORIGINS` in your backend environment variables to match your frontend URL.
+- **API URL**: Update `REACT_APP_API_URL` in Vercel to point to your Render backend URL.
+
 ## Usage
 
-1. Open the application at `http://localhost:3000`
+1. Open the application
 2. Enter a website URL
 3. Enter your search query
 4. Click "Search"
@@ -128,18 +189,6 @@ Searches for relevant chunks based on a query.
   "count": 10
 }
 ```
-
-## Production Deployment
-
-### Backend
-- Set `DEBUG = False` in settings
-- Set a secure `SECRET_KEY` in environment variables
-- Configure `ALLOWED_HOSTS`
-- Use a production WSGI server (e.g., Gunicorn)
-
-### Frontend
-- Build the production bundle: `npm run build`
-- Serve the `build` directory using a web server
 
 ## License
 

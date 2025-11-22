@@ -10,4 +10,5 @@ torch>=2.6.0
 sentence-transformers>=2.7.0
 python-dotenv==1.0.0
 pyreadline3>=3.5.0
+gunicorn>=21.2.0
 
