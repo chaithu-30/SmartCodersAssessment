@@ -17,7 +17,7 @@ Create a 5-page PowerPoint presentation for an HTML Chunk Search Application wit
   - Clean, modern UI with responsive design
   - Real-time URL fetching and content indexing
   - Top 10 relevance-ranked search results
-  - In-memory vector storage (no external database required)
+  - Pinecone vector database for scalable semantic search
 
 ## Page 2: Frontend Design
 **Title:** Frontend Implementation - React UI/UX
@@ -66,27 +66,28 @@ Create a 5-page PowerPoint presentation for an HTML Chunk Search Application wit
 **Title:** Vector Storage & Search Implementation
 
 **Content:**
-- **Storage Solution:** In-Memory Vector Storage
-  - No external database required (simplified deployment)
-  - Embeddings stored in Python dictionary structure
+- **Storage Solution:** Pinecone Vector Database
+  - Managed cloud vector database for scalable storage
+  - Serverless architecture on AWS
+  - Automatic index creation if not exists
   - Per-URL indexing with chunk-level granularity
-  - Fast retrieval for single-URL searches
+  - Fast semantic search with cosine similarity
 - **Semantic Search Engine:**
   - **Model:** sentence-transformers/all-MiniLM-L6-v2 (384 dimensions)
+  - **Vector Database:** Pinecone with cosine similarity metric
   - **Similarity Metric:** Cosine similarity for semantic matching
   - **Hybrid Scoring System:**
-    - Semantic similarity score (40-60% weight)
-    - Keyword matching (exact, substring, fuzzy matching)
-    - Term frequency analysis
-    - Position weighting (earlier chunks score higher)
-    - Phrase matching bonus
+    - Semantic similarity score from Pinecone (30% weight)
+    - Keyword matching ratio (70% weight)
+    - Exact phrase matching (99% score)
+    - Position weighting (earlier chunks get +0.1 bonus)
     - First chunk bonus for document summaries
   - **Result Ranking:** Top 10 results sorted by combined relevance score
 - **Advantages:**
-  - Zero configuration required
-  - Fast performance for single-page searches
-  - No API keys or external services needed
-  - Perfect for assessment/demo purposes
+  - Scalable cloud-based storage
+  - Fast semantic search performance
+  - Automatic index management
+  - Supports filtering by URL for targeted searches
 
 ## Page 5: Conclusion
 **Title:** Challenges, Learnings & Future Improvements
@@ -107,12 +108,12 @@ Create a 5-page PowerPoint presentation for an HTML Chunk Search Application wit
   - Environment-based configuration for flexible deployment
   - Hybrid scoring provides better results than pure semantic search
 - **Potential Improvements:**
-  1. **Scalability:** Migrate to external vector database (Pinecone, Milvus) for multi-URL support
-  2. **Performance:** Implement caching for frequently accessed URLs
-  3. **Features:** Add support for multiple URLs, batch processing, search history
-  4. **UI Enhancements:** Add filters, sorting options, export functionality
-  5. **Model Optimization:** Experiment with larger models for better semantic understanding
-  6. **Deployment:** Consider containerization (Docker) for easier deployment
+  1. **Performance:** Implement caching for frequently accessed URLs
+  2. **Features:** Add support for multiple URLs, batch processing, search history
+  3. **UI Enhancements:** Add filters, sorting options, export functionality
+  4. **Model Optimization:** Experiment with larger models for better semantic understanding
+  5. **Deployment:** Consider containerization (Docker) for easier deployment
+  6. **Advanced Search:** Add date filtering, content type filtering, multi-query support
 
 ---
 

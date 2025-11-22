@@ -125,5 +125,8 @@ CORS_ALLOW_HEADERS = [
     'referer',
 ]
 
-# Note: Using in-memory storage instead of external vector database
+# Pinecone Configuration
+PINECONE_API_KEY = os.getenv('PINECONE_API_KEY', '')
+PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME', 'html-chunks')
+PINECONE_ENVIRONMENT = os.getenv('PINECONE_ENVIRONMENT', 'us-east-1')
 

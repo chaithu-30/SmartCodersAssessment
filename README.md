@@ -70,7 +70,28 @@ The frontend will open at `http://localhost:3000`
 
 ## Vector Database Configuration
 
-**No setup required!** This application uses in-memory storage, so you don't need to configure any external vector database. The embeddings are stored in memory when you index a URL.
+This application uses **Pinecone** as the vector database for storing and searching embeddings.
+
+### Pinecone Setup
+
+1. Create a free account at [pinecone.io](https://www.pinecone.io)
+
+2. Create a new index:
+   - Dimension: `384`
+   - Metric: `cosine`
+   - Cloud: `aws`
+   - Region: `us-east-1` (or your preferred region)
+
+3. Get your API key from the Pinecone dashboard
+
+4. Create a `.env` file in the `backend` directory:
+```bash
+PINECONE_API_KEY=your-api-key-here
+PINECONE_INDEX_NAME=html-chunks
+PINECONE_ENVIRONMENT=us-east-1
+```
+
+The application will automatically create the index if it doesn't exist when you first run it.
 
 ## Usage
 
