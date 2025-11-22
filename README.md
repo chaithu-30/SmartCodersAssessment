@@ -116,8 +116,10 @@ Or connect your GitHub repository to Vercel for automatic deployments.
    - Select the `backend` directory as the root directory
 
 2. **Configure Build Settings**:
-   - Build Command: `pip install -r requirements.txt && python manage.py migrate`
-   - Start Command: `gunicorn project_settings.wsgi:application`
+   - Build Command: `pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt && python manage.py migrate`
+   - Start Command: `gunicorn project_settings.wsgi:application --timeout 120 --workers 2 --threads 2 --worker-class sync`
+   
+   **Note**: Installing CPU-only PyTorch first (~200MB) instead of full CUDA version (~900MB) significantly speeds up builds.
 
 3. **Set Environment Variables**:
    ```

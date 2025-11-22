@@ -3,32 +3,29 @@ from rest_framework.response import Response
 from rest_framework import status
 import requests
 from bs4 import BeautifulSoup
-from transformers import AutoTokenizer
-from sentence_transformers import SentenceTransformer
-from pinecone import Pinecone, ServerlessSpec
-from django.conf import settings
 import logging
 import re
 
 logger = logging.getLogger(__name__)
 
-# Global state
+# Global state - lazy loaded
 _tokenizer = None
 _model = None
-_pinecone_index = None
-_pinecone_client = None
+_indexed_pages = {}
 
 STOP_WORDS = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'in', 'to', 'of', 'for', 'on', 'with', 'at', 'by'}
 
 def get_model():
     global _model
     if _model is None:
+        from sentence_transformers import SentenceTransformer
         _model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
     return _model
 
 def get_tokenizer():
     global _tokenizer
     if _tokenizer is None:
+        from transformers import AutoTokenizer
         _tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
     return _tokenizer
 
