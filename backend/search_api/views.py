@@ -4,21 +4,22 @@ from rest_framework import status
 import requests
 from bs4 import BeautifulSoup
 from transformers import AutoTokenizer
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import SentenceTransformer
+from pinecone import Pinecone, ServerlessSpec
+from django.conf import settings
 import logging
 import re
-from difflib import SequenceMatcher
 
 logger = logging.getLogger(__name__)
 
 # Global state
-_indexed_pages = {}
 _tokenizer = None
 _model = None
+_pinecone_index = None
+_pinecone_client = None
 
-STOP_WORDS = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'in', 'to', 'of', 'for', 'on', 'with', 'at', 'by', 'from'}
+STOP_WORDS = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'in', 'to', 'of', 'for', 'on', 'with', 'at', 'by'}
 
-# === MODEL LOADING ===
 def get_model():
     global _model
     if _model is None:
@@ -31,7 +32,37 @@ def get_tokenizer():
         _tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
     return _tokenizer
 
-# === HTML PROCESSING ===
+def get_pinecone_index():
+    global _pinecone_index, _pinecone_client
+    
+    if _pinecone_index is not None:
+        return _pinecone_index if _pinecone_index is not False else None
+    
+    try:
+        api_key = settings.PINECONE_API_KEY
+        environment = settings.PINECONE_ENVIRONMENT
+        index_name = settings.PINECONE_INDEX_NAME
+        
+        _pinecone_client = Pinecone(api_key=api_key)
+        
+        # Create index if doesn't exist
+        existing = [idx.name for idx in _pinecone_client.list_indexes()]
+        if index_name not in existing:
+            _pinecone_client.create_index(
+                name=index_name,
+                dimension=384,
+                metric='cosine',
+                spec=ServerlessSpec(cloud='aws', region=environment)
+            )
+        
+        _pinecone_index = _pinecone_client.Index(index_name)
+        return _pinecone_index
+        
+    except Exception as e:
+        logger.error(f"Pinecone init failed: {e}")
+        _pinecone_index = False
+        return None
+    
 def clean_html(html):
     soup = BeautifulSoup(html, 'html.parser')
     
@@ -39,17 +70,16 @@ def clean_html(html):
     for tag in soup(['script', 'style', 'noscript', 'iframe', 'nav', 'footer', 'header', 'aside']):
         tag.decompose()
     
-    # Get main content if Wikipedia
+    # Get main content
     main = soup.find('div', id='mw-content-text') or soup.find('main') or soup
     
-    # Extract and clean text
+    # Clean text
     text = main.get_text(separator=' ', strip=True)
-    text = re.sub(r'\[edit\]|\[\d+\]', '', text)  # Remove [edit] and citations
-    text = re.sub(r'\s+', ' ', text)  # Normalize whitespace
+    text = re.sub(r'\[edit\]|\[\d+\]', '', text)
+    text = re.sub(r'\s+', ' ', text)
     
     return ' '.join(w for w in text.split() if len(w) >= 2)
 
-# === CHUNKING ===
 def chunk_text(text, max_tokens=500):
     if not text:
         return []
@@ -66,20 +96,49 @@ def chunk_text(text, max_tokens=500):
     
     return chunks
 
-# === INDEXING ===
+# === INDEXING WITH PINECONE ===
 def index_url(url, chunks):
     if not chunks:
         return False
     
+    index = get_pinecone_index()
+    if not index:
+        return False
+    
     try:
         model = get_model()
+        url_hash = abs(hash(url)) % (10 ** 8)
+        
+        # Delete old chunks for this URL
+        try:
+            index.delete(filter={"url": {"$eq": url}})
+        except:
+            pass
+        
+        # Generate embeddings
         embeddings = model.encode(chunks, normalize_embeddings=True, show_progress_bar=False)
         
-        _indexed_pages[url] = {
-            'chunks': chunks,
-            'embeddings': embeddings
-        }
+        # Prepare vectors for Pinecone
+        vectors = []
+        for idx, (chunk, embedding) in enumerate(zip(chunks, embeddings)):
+            vectors.append({
+                "id": f"{url_hash}_{idx}",
+                "values": embedding.tolist(),
+                "metadata": {
+                    "chunk_text": chunk[:5000],  # Pinecone metadata limit
+                    "url": url,
+                    "chunk_index": idx
+                }
+            })
+        
+        # Upsert in batches
+        batch_size = 100
+        for i in range(0, len(vectors), batch_size):
+            batch = vectors[i:i + batch_size]
+            index.upsert(vectors=batch)
+        
         return True
+        
     except Exception as e:
         logger.error(f"Indexing error: {e}")
         return False
@@ -98,11 +157,11 @@ def score_result(chunk_text, query, semantic_score, chunk_idx):
     matched = sum(1 for w in query_words if w in chunk_lower)
     
     if matched == 0:
-        # Pure semantic scoring
+        # Pure semantic scoring from Pinecone
         score = semantic_score * 0.6
-        return min(0.99, score), f"Semantic similarity only ({semantic_score:.0%})"
+        return min(0.99, score), f"Semantic similarity ({semantic_score:.0%})"
     
-    # Hybrid scoring: semantic + keyword
+    # Hybrid: Pinecone semantic + keyword matching
     keyword_ratio = matched / max(len(query_words), 1)
     keyword_score = keyword_ratio * 0.7
     
@@ -116,54 +175,86 @@ def score_result(chunk_text, query, semantic_score, chunk_idx):
     final_score = min(0.99, final_score * 1.1)
     
     reason = f"Found {matched}/{len(query_words)} keywords"
+    if semantic_score > 0.5:
+        reason += f" | High semantic match ({semantic_score:.0%})"
     if chunk_idx == 0:
         reason += " | Document intro"
     
     return final_score, reason
 
-# === SEARCH ===
+# === SEARCH WITH PINECONE ===
 def search(query, url=None, top_k=10):
-    if not _indexed_pages or not query:
+    if not query:
         return []
     
-    model = get_model()
-    query_embedding = model.encode(query, normalize_embeddings=True, show_progress_bar=False)
+    index = get_pinecone_index()
+    if not index:
+        return []
     
-    results = []
-    pages = [url] if url and url in _indexed_pages else _indexed_pages.keys()
-    
-    for page_url in pages:
-        data = _indexed_pages[page_url]
-        similarities = util.cos_sim(query_embedding, data['embeddings'])[0]
+    try:
+        model = get_model()
         
-        for idx, (chunk, sim) in enumerate(zip(data['chunks'], similarities)):
-            score, reason = score_result(chunk, query, float(sim), idx)
+        # Generate query embedding
+        query_embedding = model.encode(query, normalize_embeddings=True, show_progress_bar=False)
+        
+        # Search Pinecone (semantic search)
+        filter_dict = {"url": {"$eq": url}} if url else None
+        fetch_k = min(top_k * 3, 30)  # Fetch more for reranking
+        
+        response = index.query(
+            vector=query_embedding.tolist(),
+            top_k=fetch_k,
+            filter=filter_dict,
+            include_metadata=True
+        )
+        
+        # Rerank with keyword matching
+        results = []
+        for match in response.matches:
+            metadata = match.metadata
+            chunk_text = metadata.get('chunk_text', '')
+            
+            if not chunk_text:
+                continue
+            
+            # match.score is the cosine similarity from Pinecone
+            final_score, reason = score_result(
+                chunk_text,
+                query,
+                match.score,
+                int(metadata.get('chunk_index', 0))
+            )
             
             results.append({
-                'chunk_text': chunk,
-                'chunk_index': idx,
-                'url': page_url,
-                'relevance_score': score,
+                'chunk_text': chunk_text,
+                'chunk_index': metadata.get('chunk_index', 0),
+                'url': metadata.get('url', ''),
+                'relevance_score': final_score,
                 'score_reason': reason,
-                'semantic_score': float(sim)
+                'semantic_score': match.score  # Pinecone's semantic score
             })
-    
-    # Sort and deduplicate
-    results.sort(key=lambda x: x['relevance_score'], reverse=True)
-    seen = set()
-    unique = []
-    
-    for r in results:
-        uid = f"{r['url']}_{r['chunk_index']}"
-        if uid not in seen:
-            seen.add(uid)
-            unique.append(r)
-    
-    return unique[:top_k]
+        
+        # Sort by final score and deduplicate
+        results.sort(key=lambda x: x['relevance_score'], reverse=True)
+        
+        seen = set()
+        unique = []
+        for r in results:
+            uid = f"{r['url']}_{r['chunk_index']}"
+            if uid not in seen:
+                seen.add(uid)
+                unique.append(r)
+        
+        return unique[:top_k]
+        
+    except Exception as e:
+        logger.error(f"Search error: {e}")
+        return []
 
 # === API ENDPOINTS ===
 @api_view(['POST'])
 def fetch_url_view(request):
+    """Fetch URL, extract content, and index in Pinecone."""
     url = request.data.get('url')
     if not url:
         return Response({'error': 'URL required'}, status=400)
@@ -174,20 +265,21 @@ def fetch_url_view(request):
         response = requests.get(url, headers=headers, timeout=15)
         response.raise_for_status()
         
-        # Process
+        # Process and chunk
         text = clean_html(response.text)
         chunks = chunk_text(text, max_tokens=500)
         
         if not chunks:
             return Response({'error': 'No content extracted'}, status=400)
         
-        # Index
+        # Index in Pinecone
         success = index_url(url, chunks)
         
         return Response({
             'url': url,
             'chunks_count': len(chunks),
-            'indexed': success
+            'indexed': success,
+            'message': f'Indexed {len(chunks)} chunks in Pinecone'
         })
         
     except Exception as e:
@@ -196,6 +288,10 @@ def fetch_url_view(request):
 
 @api_view(['POST'])
 def search_view(request):
+    """
+    Search indexed content using Pinecone semantic search + keyword matching.
+    Returns top 10 most relevant chunks.
+    """
     query = request.data.get('query', '').strip()
     url = request.data.get('url')
     
@@ -203,12 +299,16 @@ def search_view(request):
         return Response({'error': 'Query required'}, status=400)
     
     try:
+        # Search using Pinecone vector database
         results = search(query, url=url, top_k=10)
+        
         return Response({
             'query': query,
             'results': results,
-            'count': len(results)
+            'count': len(results),
+            'search_method': 'Pinecone semantic search + keyword reranking'
         })
+        
     except Exception as e:
         logger.error(f"Search error: {e}")
         return Response({'error': str(e)}, status=500)

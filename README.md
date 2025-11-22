@@ -95,7 +95,7 @@ cd frontend
 
 3. **Set environment variable**:
    - Go to your Vercel project settings
-   - Add environment variable: `REACT_APP_API_URL` = `https://your-backend-url.onrender.com`
+   - Add environment variable: `REACT_APP_API_URL` = `https://smartcodersassessment.onrender.com`
 
 4. **Deploy**:
 ```bash
@@ -123,9 +123,11 @@ Or connect your GitHub repository to Vercel for automatic deployments.
    ```
    DEBUG=False
    SECRET_KEY=your-secret-key-here
-   ALLOWED_HOSTS=your-app-name.onrender.com
+   ALLOWED_HOSTS=smartcodersassessment.onrender.com
    CORS_ALLOWED_ORIGINS=https://your-frontend-app.vercel.app
    ```
+   
+   **Note**: Update `CORS_ALLOWED_ORIGINS` with your actual Vercel frontend URL after deployment.
 
 4. **Add Gunicorn to requirements.txt** (if not already present):
    ```
