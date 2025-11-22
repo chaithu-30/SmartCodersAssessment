@@ -25,8 +25,18 @@ def get_model():
 def get_tokenizer():
     global _tokenizer
     if _tokenizer is None:
-        from transformers import AutoTokenizer
-        _tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+        try:
+            model = get_model()
+            if hasattr(model, 'tokenizer') and model.tokenizer is not None:
+                _tokenizer = model.tokenizer
+            elif hasattr(model, '_modules') and 'tokenizer' in model._modules:
+                _tokenizer = model._modules['tokenizer']
+            else:
+                from transformers import AutoTokenizer
+                _tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+        except Exception as e:
+            logger.warning(f"Could not load tokenizer: {e}, using word-based chunking")
+            _tokenizer = None
     return _tokenizer
 
 def get_pinecone_index():
@@ -82,16 +92,35 @@ def chunk_text(text, max_tokens=500):
         return []
     
     tokenizer = get_tokenizer()
-    tokens = tokenizer.encode(text, add_special_tokens=False)
+    if tokenizer is None:
+        words = text.split()
+        words_per_chunk = max_tokens
+        chunks = []
+        for i in range(0, len(words), words_per_chunk):
+            chunk = ' '.join(words[i:i + words_per_chunk])
+            if chunk.strip():
+                chunks.append(chunk.strip())
+        return chunks
     
-    chunks = []
-    for i in range(0, len(tokens), max_tokens):
-        chunk_tokens = tokens[i:i + max_tokens]
-        chunk_text = tokenizer.decode(chunk_tokens, skip_special_tokens=True).strip()
-        if chunk_text:
-            chunks.append(chunk_text)
-    
-    return chunks
+    try:
+        tokens = tokenizer.encode(text, add_special_tokens=False)
+        chunks = []
+        for i in range(0, len(tokens), max_tokens):
+            chunk_tokens = tokens[i:i + max_tokens]
+            chunk_text = tokenizer.decode(chunk_tokens, skip_special_tokens=True).strip()
+            if chunk_text:
+                chunks.append(chunk_text)
+        return chunks
+    except Exception as e:
+        logger.warning(f"Tokenizer error: {e}, using word-based chunking")
+        words = text.split()
+        words_per_chunk = max_tokens
+        chunks = []
+        for i in range(0, len(words), words_per_chunk):
+            chunk = ' '.join(words[i:i + words_per_chunk])
+            if chunk.strip():
+                chunks.append(chunk.strip())
+        return chunks
 
 # === INDEXING WITH PINECONE ===
 def index_url(url, chunks):
