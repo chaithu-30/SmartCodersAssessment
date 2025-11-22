@@ -189,7 +189,3 @@ Searches for relevant chunks based on a query.
   "count": 10
 }
 ```
-
-## License
-
-This project is created for assessment purposes.
