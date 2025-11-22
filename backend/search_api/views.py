@@ -39,8 +39,8 @@ def get_model():
                 torch.cuda.empty_cache()
             
             print("Initializing model (smallest model for memory efficiency)...")
-            # Using smallest model: all-MiniLM-L3-v2 (22MB vs 80MB for paraphrase-L3)
-            _model = SentenceTransformer('sentence-transformers/all-MiniLM-L3-v2')
+            # Using smallest model: paraphrase-MiniLM-L3-v2 (22MB, 384 dimensions)
+            _model = SentenceTransformer('sentence-transformers/paraphrase-MiniLM-L3-v2')
             
             # Set model to evaluation mode and disable gradients
             _model.eval()
@@ -71,7 +71,7 @@ def get_tokenizer():
             _tokenizer = getattr(model, 'tokenizer', None)
             if _tokenizer is None:
                 from transformers import AutoTokenizer
-                _tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L3-v2')
+                _tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/paraphrase-MiniLM-L3-v2')
         except Exception as e:
             logger.warning(f"Tokenizer load failed: {e}")
             _tokenizer = False
@@ -122,7 +122,7 @@ def get_pinecone_index():
             logger.info(f"Creating Pinecone index: {index_name}")
             _pinecone_client.create_index(
                 name=index_name,
-                dimension=384,
+                    dimension=384,
                 metric='cosine',
                 spec=ServerlessSpec(cloud='aws', region=environment)
             )
@@ -151,7 +151,7 @@ def get_pinecone_index():
 
 def clean_html(html):
     soup = BeautifulSoup(html, 'html.parser')
-    
+
     for tag in soup(['script', 'style', 'noscript', 'iframe', 'nav', 'footer', 'header', 'aside']):
         tag.decompose()
     
@@ -167,7 +167,7 @@ def chunk_text(text, max_tokens=500):
     if not text:
         print("WARNING: Empty text provided for chunking")
         return []
-    
+
     print(f"Chunking text (length: {len(text)}, max_tokens: {max_tokens})...")
     tokenizer = get_tokenizer()
     
@@ -264,11 +264,11 @@ def index_url(url, chunks):
         vectors = [{
             "id": f"{url_hash}_{idx}",
             "values": emb.tolist() if hasattr(emb, 'tolist') else list(emb),
-            "metadata": {
+                "metadata": {
                 "chunk_text": chunk[:5000],
-                "url": url,
-                "chunk_index": idx
-            }
+                    "url": url,
+                    "chunk_index": idx
+                }
         } for idx, (chunk, emb) in enumerate(zip(chunks, embeddings))]
         print(f"Prepared {len(vectors)} vectors")
         
