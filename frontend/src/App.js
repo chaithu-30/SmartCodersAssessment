@@ -20,6 +20,10 @@ function App() {
     setQuery(searchQuery);
 
     try {
+      // Create abort controller for timeout
+      const fetchController = new AbortController();
+      const fetchTimeout = setTimeout(() => fetchController.abort(), 120000); // 2 minute timeout
+
       let fetchResponse;
       try {
         fetchResponse = await fetch(`${API_BASE_URL}/api/fetch/`, {
@@ -28,8 +32,14 @@ function App() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ url: searchUrl }),
+          signal: fetchController.signal,
         });
+        clearTimeout(fetchTimeout);
       } catch (networkError) {
+        clearTimeout(fetchTimeout);
+        if (networkError.name === 'AbortError') {
+          throw new Error('Request timed out. Please try again.');
+        }
         if (networkError instanceof TypeError && networkError.message.includes('fetch')) {
           throw new Error('Backend server is not running. Please check the API URL configuration.');
         }
@@ -46,6 +56,10 @@ function App() {
         throw new Error(errorData.error || 'Failed to fetch URL');
       }
 
+      // Create abort controller for search timeout
+      const searchController = new AbortController();
+      const searchTimeout = setTimeout(() => searchController.abort(), 120000); // 2 minute timeout
+
       let searchResponse;
       try {
         searchResponse = await fetch(`${API_BASE_URL}/api/search/`, {
@@ -54,8 +68,14 @@ function App() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({ query: searchQuery, url: searchUrl }),
+          signal: searchController.signal,
         });
+        clearTimeout(searchTimeout);
       } catch (networkError) {
+        clearTimeout(searchTimeout);
+        if (networkError.name === 'AbortError') {
+          throw new Error('Search request timed out. Please try again.');
+        }
         if (networkError instanceof TypeError && networkError.message.includes('fetch')) {
           throw new Error('Backend server is not running. Please check the API URL configuration.');
         }

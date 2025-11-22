@@ -10,7 +10,18 @@ import re
 
 logger = logging.getLogger(__name__)
 
-_model = None
+print("=" * 60)
+print("PRELOADING MODEL AT WORKER STARTUP")
+print("=" * 60)
+
+try:
+    from sentence_transformers import SentenceTransformer
+    _model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+    print("MODEL PRELOADED SUCCESSFULLY")
+except Exception as e:
+    print(f"MODEL PRELOAD FAILED: {e}")
+    _model = None
+
 _tokenizer = None
 _pinecone_index = None
 _pinecone_client = None
@@ -22,14 +33,12 @@ def get_model():
     if _model is None:
         print("\n" + "=" * 60)
         print("MODEL LOADING: Starting sentence-transformers model load...")
-        print("This may take 30-60 seconds on first request")
         print("=" * 60)
         logger.info("Starting model loading...")
         try:
             print("Importing SentenceTransformer...")
             from sentence_transformers import SentenceTransformer
-            print("Import successful, initializing model...")
-            print("Model: sentence-transformers/all-MiniLM-L6-v2")
+            print("Initializing model...")
             _model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
             print("=" * 60)
             print("MODEL LOADED SUCCESSFULLY!")
@@ -86,7 +95,6 @@ def get_pinecone_index():
         if not api_key:
             print("=" * 60)
             print("ERROR: PINECONE_API_KEY not set in environment variables!")
-            print("Please set PINECONE_API_KEY in Render environment variables")
             print("=" * 60 + "\n")
             logger.error("PINECONE_API_KEY not configured")
             _pinecone_index = False
@@ -101,7 +109,7 @@ def get_pinecone_index():
         existing = [idx.name for idx in _pinecone_client.list_indexes()]
         print(f"PINECONE: Found {len(existing)} existing indexes: {existing}")
         logger.info(f"Found {len(existing)} existing indexes")
-        
+            
         if index_name not in existing:
             print(f"PINECONE: Index '{index_name}' not found, creating...")
             logger.info(f"Creating Pinecone index: {index_name}")
@@ -136,7 +144,7 @@ def get_pinecone_index():
 
 def clean_html(html):
     soup = BeautifulSoup(html, 'html.parser')
-
+    
     for tag in soup(['script', 'style', 'noscript', 'iframe', 'nav', 'footer', 'header', 'aside']):
         tag.decompose()
     
@@ -152,7 +160,7 @@ def chunk_text(text, max_tokens=500):
     if not text:
         print("WARNING: Empty text provided for chunking")
         return []
-
+    
     print(f"Chunking text (length: {len(text)}, max_tokens: {max_tokens})...")
     tokenizer = get_tokenizer()
     
@@ -227,11 +235,11 @@ def index_url(url, chunks):
         vectors = [{
             "id": f"{url_hash}_{idx}",
             "values": emb.tolist(),
-                "metadata": {
+            "metadata": {
                 "chunk_text": chunk[:5000],
-                    "url": url,
-                    "chunk_index": idx
-                }
+                "url": url,
+                "chunk_index": idx
+            }
         } for idx, (chunk, emb) in enumerate(zip(chunks, embeddings))]
         print(f"Prepared {len(vectors)} vectors")
         
@@ -388,7 +396,6 @@ def search(query, url=None, top_k=10):
 
 @api_view(['GET'])
 def health_check(request):
-    """Health check endpoint that doesn't load models"""
     print("=" * 60)
     print("HEALTH CHECK ENDPOINT CALLED")
     print("=" * 60)

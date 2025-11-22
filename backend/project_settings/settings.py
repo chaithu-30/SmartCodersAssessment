@@ -123,7 +123,13 @@ CORS_ALLOW_HEADERS = [
     'sec-ch-ua-mobile',
     'sec-ch-ua-platform',
     'referer',
+    'sec-fetch-dest',
+    'sec-fetch-mode',
+    'sec-fetch-site',
 ]
+
+# Exempt CSRF for API endpoints
+CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy() if CORS_ALLOWED_ORIGINS else []
 
 # Pinecone Configuration
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY', '')
