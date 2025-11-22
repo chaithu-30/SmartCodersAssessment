@@ -125,11 +125,11 @@ Or connect your GitHub repository to Vercel for automatic deployments.
    ```
    DEBUG=False
    SECRET_KEY=your-secret-key-here
-   ALLOWED_HOSTS=smartcodersassessment.onrender.com
-   CORS_ALLOWED_ORIGINS=https://your-frontend-app.vercel.app
+   ALLOWED_HOSTS=smartcoders-assessment.onrender.com
+   CORS_ALLOWED_ORIGINS=https://smart-coders-assessment.vercel.app
    ```
    
-   **Note**: Update `CORS_ALLOWED_ORIGINS` with your actual Vercel frontend URL after deployment.
+   **Note**: The CORS settings now include the Vercel frontend URL by default. If your frontend URL is different, update `CORS_ALLOWED_ORIGINS` accordingly.
 
 4. **Add Gunicorn to requirements.txt** (if not already present):
    ```
