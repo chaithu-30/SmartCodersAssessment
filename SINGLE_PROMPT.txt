@@ -1,0 +1,24 @@
+Create a 5-page PowerPoint presentation for an HTML Chunk Search Application:
+
+PAGE 1 - INTRODUCTION:
+Title: "HTML Chunk Search Application - Overview"
+Content: Task is to build a web app that searches website content using semantic search. Users enter a URL and query to find relevant content chunks. Solution: Full-stack app with React frontend and Django REST API backend. Uses semantic search with vector embeddings (sentence-transformers), intelligent HTML parsing, tokenization/chunking, and hybrid scoring (semantic + keyword matching). Key features: Modern responsive UI, real-time URL fetching/indexing, top 10 ranked results, in-memory vector storage (no external DB needed).
+
+PAGE 2 - FRONTEND DESIGN:
+Title: "Frontend Implementation - React UI/UX"
+Content: Built with React 18 and Create React App. UI/UX: Clean modern interface with intuitive two-input search form (URL + query), real-time loading states, error handling, responsive design. Key components: SearchForm.js (input validation), ResultsDisplay.js (results with expandable previews). User experience: Simple flow (Enter URL → Enter Query → Search), visual feedback, clear errors, expandable result cards with relevance scores and highlighted keywords.
+
+PAGE 3 - BACKEND LOGIC:
+Title: "Backend Architecture - Django & Processing Pipeline"
+Content: Framework: Django 4.2 with Django REST Framework. HTML Processing Pipeline: (1) URL Fetching with HTTP requests and error handling, (2) HTML Parsing using BeautifulSoup4 - removes scripts/styles/navigation, focuses on main content, cleans citations, (3) Tokenization with Hugging Face transformers AutoTokenizer - 500 tokens per chunk, preserves word boundaries, fallback to word-based chunking, (4) Embedding Generation with sentence-transformers all-MiniLM-L6-v2 model - 384-dimensional normalized vectors. API Endpoints: POST /api/fetch/ (indexes content), POST /api/search/ (semantic search with hybrid scoring).
+
+PAGE 4 - VECTOR DATABASE:
+Title: "Vector Storage & Search Implementation"
+Content: Storage: In-memory vector storage using Python dictionaries - no external DB, per-URL indexing, chunk-level granularity, fast single-URL searches. Semantic Search: Model is sentence-transformers/all-MiniLM-L6-v2 (384 dims), uses cosine similarity. Hybrid Scoring combines: semantic similarity (40-60% weight), keyword matching (exact/substring/fuzzy), term frequency, position weighting, phrase matching bonus, first chunk bonus. Returns top 10 results by combined relevance. Advantages: Zero configuration, fast performance, no API keys needed, perfect for demos.
+
+PAGE 5 - CONCLUSION:
+Title: "Challenges, Learnings & Future Improvements"
+Content: Challenges: (1) Memory management - large ML models caused worker timeouts, solved with lazy loading and CPU-only PyTorch, (2) Import errors - AutoTokenizer issues, solved with fallbacks and model's built-in tokenizer, (3) CORS configuration - Vercel/Render cross-origin, solved with comprehensive headers, (4) Build optimization - slow deployments, solved with optimized build commands. Lessons: Lazy loading importance, robust error handling, environment-based config, hybrid scoring beats pure semantic. Future improvements: External vector DB for scalability, caching, multi-URL support, batch processing, UI filters/sorting, larger models, Docker containerization.
+
+Design: Professional color scheme (blues/grays/whites), include code snippets/diagrams, concise bullet points, icons/graphics, consistent styling.
+

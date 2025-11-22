@@ -1,68 +1,57 @@
 # HTML Chunk Search Application
 
-A web application that allows users to search HTML content from websites using semantic search.
-
-## Features
-
-- Clean, modern UI with responsive design
-- URL fetching and HTML content extraction
-- Intelligent HTML parsing
-- Tokenization and chunking (max 500 tokens per chunk)
-- Semantic search using vector embeddings
-- Top 10 relevance-ranked results
-- In-memory storage (no external database required)
-
-## Tech Stack
-
-- **Frontend**: React 18
-- **Backend**: Django 4.2 with Django REST Framework
-- **HTML Parsing**: BeautifulSoup4
-- **Tokenization**: Transformers (Hugging Face)
-- **Semantic Search**: Sentence Transformers
+A web application that searches through website content using semantic search. Enter a URL and a search query to find the most relevant content chunks.
 
 ## Prerequisites
 
-- Python 3.9 or higher
-- Node.js 16 or higher and npm
+Before you begin, make sure you have:
 
-## Local Development Setup
+- **Python 3.9+** installed
+- **Node.js 16+** and **npm** installed
+
+## Local Setup
 
 ### Backend Setup
 
-1. Navigate to the backend directory:
+1. Navigate to the backend folder:
 ```bash
 cd backend
 ```
 
-2. Create a virtual environment:
-```bash
-python -m venv venv
-```
+2. Create and activate a virtual environment:
 
-3. Activate the virtual environment:
-   - **Windows**: `venv\Scripts\activate`
-   - **Linux/Mac**: `source venv/bin/activate`
+   **Windows:**
+   ```bash
+   python -m venv venv
+   venv\Scripts\activate
+   ```
 
-4. Install dependencies:
+   **Mac/Linux:**
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   ```
+
+3. Install Python dependencies:
 ```bash
 pip install -r requirements.txt
 ```
 
-5. Run database migrations:
+4. Run database migrations:
 ```bash
 python manage.py migrate
 ```
 
-6. Start the Django server:
+5. Start the backend server:
 ```bash
 python manage.py runserver
 ```
 
-The backend API will be available at `http://localhost:8000`.
+The backend will run on `http://localhost:8000`
 
 ### Frontend Setup
 
-1. Navigate to the frontend directory:
+1. Open a new terminal and navigate to the frontend folder:
 ```bash
 cd frontend
 ```
@@ -77,119 +66,17 @@ npm install
 npm start
 ```
 
-The frontend will be available at `http://localhost:3000`.
+The frontend will open at `http://localhost:3000`
 
-## Production Deployment
+## Vector Database Configuration
 
-### Frontend Deployment on Vercel
-
-1. **Install Vercel CLI** (if not already installed):
-```bash
-npm i -g vercel
-```
-
-2. **Navigate to frontend directory**:
-```bash
-cd frontend
-```
-
-3. **Set environment variable**:
-   - Go to your Vercel project settings
-   - Add environment variable: `REACT_APP_API_URL` = `https://smartcodersassessment.onrender.com`
-
-4. **Deploy**:
-```bash
-vercel
-```
-Or connect your GitHub repository to Vercel for automatic deployments.
-
-5. **Build Settings** (if using Vercel dashboard):
-   - Framework Preset: Create React App
-   - Build Command: `npm run build`
-   - Output Directory: `build`
-   - Install Command: `npm install`
-
-### Backend Deployment on Render
-
-1. **Create a new Web Service** on Render:
-   - Connect your GitHub repository
-   - Select the `backend` directory as the root directory
-
-2. **Configure Build Settings**:
-   - Build Command: `pip install torch --index-url https://download.pytorch.org/whl/cpu && pip install -r requirements.txt && python manage.py migrate`
-   - Start Command: `gunicorn project_settings.wsgi:application --timeout 120 --workers 2 --threads 2 --worker-class sync`
-   
-   **Note**: Installing CPU-only PyTorch first (~200MB) instead of full CUDA version (~900MB) significantly speeds up builds.
-
-3. **Set Environment Variables**:
-   ```
-   DEBUG=False
-   SECRET_KEY=your-secret-key-here
-   ALLOWED_HOSTS=smartcoders-assessment.onrender.com
-   CORS_ALLOWED_ORIGINS=https://smart-coders-assessment.vercel.app
-   ```
-   
-   **Note**: The CORS settings now include the Vercel frontend URL by default. If your frontend URL is different, update `CORS_ALLOWED_ORIGINS` accordingly.
-
-4. **Add Gunicorn to requirements.txt** (if not already present):
-   ```
-   gunicorn>=21.2.0
-   ```
-
-5. **Deploy**: Render will automatically deploy when you push to your repository.
-
-### Important Notes
-
-- **No Pinecone Required**: This application uses in-memory storage, so no external vector database setup is needed.
-- **CORS Configuration**: Make sure to set `CORS_ALLOWED_ORIGINS` in your backend environment variables to match your frontend URL.
-- **API URL**: Update `REACT_APP_API_URL` in Vercel to point to your Render backend URL.
+**No setup required!** This application uses in-memory storage, so you don't need to configure any external vector database. The embeddings are stored in memory when you index a URL.
 
 ## Usage
 
-1. Open the application
-2. Enter a website URL
+1. Open `http://localhost:3000` in your browser
+2. Enter a website URL (e.g., `https://en.wikipedia.org/wiki/Python`)
 3. Enter your search query
-4. Click "Search"
-5. View the top 10 most relevant content chunks
+4. Click "Search" to see the top 10 most relevant results
 
-## API Endpoints
-
-### POST `/api/fetch/`
-Fetches and indexes HTML content from a URL.
-
-**Request:**
-```json
-{
-  "url": "https://example.com"
-}
-```
-
-**Response:**
-```json
-{
-  "url": "https://example.com",
-  "chunks_count": 15,
-  "indexed": true,
-  "message": "Processed 15 chunks"
-}
-```
-
-### POST `/api/search/`
-Searches for relevant chunks based on a query.
-
-**Request:**
-```json
-{
-  "query": "contact information",
-  "url": "https://example.com"
-}
-```
-
-**Response:**
-```json
-{
-  "query": "contact information",
-  "results": [...],
-  "count": 10
-}
-```
+That's it! The application will fetch the webpage, extract content, and search through it using semantic similarity.
