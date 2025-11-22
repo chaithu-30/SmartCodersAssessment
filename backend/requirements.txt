@@ -10,4 +10,5 @@ sentence-transformers>=2.7.0
 python-dotenv==1.0.0
 pinecone>=3.0.0
 gunicorn>=21.2.0
+torch>=2.6.0
 

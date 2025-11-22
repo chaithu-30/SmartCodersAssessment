@@ -91,7 +91,7 @@ def get_pinecone_index():
             logger.error("PINECONE_API_KEY not configured")
             _pinecone_index = False
             return None
-        
+            
         print("PINECONE: Initializing Pinecone client...")
         logger.info("Initializing Pinecone client...")
         _pinecone_client = Pinecone(api_key=api_key)
@@ -136,7 +136,7 @@ def get_pinecone_index():
 
 def clean_html(html):
     soup = BeautifulSoup(html, 'html.parser')
-    
+
     for tag in soup(['script', 'style', 'noscript', 'iframe', 'nav', 'footer', 'header', 'aside']):
         tag.decompose()
     
@@ -147,12 +147,12 @@ def clean_html(html):
     text = re.sub(r'\s+', ' ', text)
     
     return ' '.join(w for w in text.split() if len(w) >= 2)
-
+    
 def chunk_text(text, max_tokens=500):
     if not text:
         print("WARNING: Empty text provided for chunking")
         return []
-    
+
     print(f"Chunking text (length: {len(text)}, max_tokens: {max_tokens})...")
     tokenizer = get_tokenizer()
     
@@ -227,11 +227,11 @@ def index_url(url, chunks):
         vectors = [{
             "id": f"{url_hash}_{idx}",
             "values": emb.tolist(),
-            "metadata": {
+                "metadata": {
                 "chunk_text": chunk[:5000],
-                "url": url,
-                "chunk_index": idx
-            }
+                    "url": url,
+                    "chunk_index": idx
+                }
         } for idx, (chunk, emb) in enumerate(zip(chunks, embeddings))]
         print(f"Prepared {len(vectors)} vectors")
         
