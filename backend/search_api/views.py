@@ -10,17 +10,8 @@ import re
 
 logger = logging.getLogger(__name__)
 
-print("=" * 60)
-print("PRELOADING MODEL AT WORKER STARTUP")
-print("=" * 60)
-
-try:
-    from sentence_transformers import SentenceTransformer
-    _model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-    print("MODEL PRELOADED SUCCESSFULLY")
-except Exception as e:
-    print(f"MODEL PRELOAD FAILED: {e}")
-    _model = None
+# Model loaded lazily on first request to save memory
+_model = None
 
 _tokenizer = None
 _pinecone_index = None
@@ -36,10 +27,26 @@ def get_model():
         print("=" * 60)
         logger.info("Starting model loading...")
         try:
+            # Set PyTorch memory optimizations
+            import os
+            os.environ['PYTORCH_CUDA_ALLOC_CONF'] = 'max_split_size_mb:128'
+            
             print("Importing SentenceTransformer...")
             from sentence_transformers import SentenceTransformer
-            print("Initializing model...")
-            _model = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+            import torch
+            # Clear any cached memory
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+            
+            print("Initializing model (smallest model for memory efficiency)...")
+            # Using smallest model: all-MiniLM-L3-v2 (22MB vs 80MB for paraphrase-L3)
+            _model = SentenceTransformer('sentence-transformers/all-MiniLM-L3-v2')
+            
+            # Set model to evaluation mode and disable gradients
+            _model.eval()
+            for param in _model.parameters():
+                param.requires_grad = False
+            
             print("=" * 60)
             print("MODEL LOADED SUCCESSFULLY!")
             print("=" * 60 + "\n")
@@ -64,7 +71,7 @@ def get_tokenizer():
             _tokenizer = getattr(model, 'tokenizer', None)
             if _tokenizer is None:
                 from transformers import AutoTokenizer
-                _tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L6-v2')
+                _tokenizer = AutoTokenizer.from_pretrained('sentence-transformers/all-MiniLM-L3-v2')
         except Exception as e:
             logger.warning(f"Tokenizer load failed: {e}")
             _tokenizer = False
@@ -225,16 +232,38 @@ def index_url(url, chunks):
             print(f"Warning: Could not delete old chunks: {e}")
             logger.warning(f"Could not delete old chunks: {e}")
         
-        print(f"Generating embeddings for {len(chunks)} chunks...")
+        print(f"Generating embeddings for {len(chunks)} chunks in small batches (memory efficient)...")
         logger.info(f"Generating embeddings for {len(chunks)} chunks...")
-        embeddings = model.encode(chunks, normalize_embeddings=True, show_progress_bar=False)
+        
+        # Process in small batches to reduce memory usage
+        batch_size = 10  # Small batch size for memory efficiency
+        all_embeddings = []
+        for i in range(0, len(chunks), batch_size):
+            batch_chunks = chunks[i:i + batch_size]
+            batch_embeddings = model.encode(
+                batch_chunks, 
+                normalize_embeddings=True, 
+                show_progress_bar=False,
+                batch_size=8,  # Internal batch size
+                convert_to_numpy=True
+            )
+            all_embeddings.append(batch_embeddings)
+            print(f"Processed {min(i + batch_size, len(chunks))}/{len(chunks)} chunks")
+        
+        import numpy as np
+        embeddings = np.vstack(all_embeddings)
         print(f"Embeddings generated: shape {embeddings.shape}")
         logger.info(f"Embeddings generated: {embeddings.shape}")
+        
+        # Clear memory
+        del all_embeddings
+        import gc
+        gc.collect()
         
         print("Preparing vectors for Pinecone...")
         vectors = [{
             "id": f"{url_hash}_{idx}",
-            "values": emb.tolist(),
+            "values": emb.tolist() if hasattr(emb, 'tolist') else list(emb),
             "metadata": {
                 "chunk_text": chunk[:5000],
                 "url": url,
@@ -243,14 +272,25 @@ def index_url(url, chunks):
         } for idx, (chunk, emb) in enumerate(zip(chunks, embeddings))]
         print(f"Prepared {len(vectors)} vectors")
         
-        print("Uploading vectors to Pinecone in batches of 100...")
-        batch_count = (len(vectors) + 99) // 100
-        for i in range(0, len(vectors), 100):
-            batch_num = (i // 100) + 1
-            batch = vectors[i:i + 100]
+        # Clear embeddings from memory after conversion
+        del embeddings
+        gc.collect()
+        
+        # Use smaller batches for Pinecone upload to reduce memory
+        upload_batch_size = 50  # Reduced from 100
+        print(f"Uploading vectors to Pinecone in batches of {upload_batch_size}...")
+        batch_count = (len(vectors) + upload_batch_size - 1) // upload_batch_size
+        for i in range(0, len(vectors), upload_batch_size):
+            batch_num = (i // upload_batch_size) + 1
+            batch = vectors[i:i + upload_batch_size]
             print(f"Uploading batch {batch_num}/{batch_count} ({len(batch)} vectors)...")
             index.upsert(vectors=batch)
             print(f"Batch {batch_num} uploaded successfully")
+            # Clear batch from memory
+            del batch
+            if i % (upload_batch_size * 5) == 0:  # GC every 5 batches
+                import gc
+                gc.collect()
         
         print("=" * 60)
         print(f"INDEXING SUCCESS: {len(chunks)} chunks indexed for {url}")
@@ -325,8 +365,19 @@ def search(query, url=None, top_k=10):
         model = get_model()
         print("Generating query embedding...")
         logger.info(f"Generating embedding for query: '{query}'")
-        query_embedding = model.encode(query, normalize_embeddings=True, show_progress_bar=False)
+        query_embedding = model.encode(
+            query, 
+            normalize_embeddings=True, 
+            show_progress_bar=False,
+            convert_to_numpy=True
+        )
         print(f"Query embedding generated: shape {query_embedding.shape}")
+        
+        # Convert to list immediately and clear numpy array
+        query_embedding_list = query_embedding.tolist() if hasattr(query_embedding, 'tolist') else query_embedding
+        del query_embedding
+        import gc
+        gc.collect()
         
         filter_dict = {"url": {"$eq": url}} if url else None
         fetch_k = min(top_k * 3, 30)
@@ -334,11 +385,15 @@ def search(query, url=None, top_k=10):
         logger.info(f"Querying Pinecone with fetch_k={fetch_k}")
         
         response = index.query(
-            vector=query_embedding.tolist(),
+            vector=query_embedding_list,
             top_k=fetch_k,
             filter=filter_dict,
             include_metadata=True
         )
+        
+        # Clear query embedding from memory
+        del query_embedding_list
+        gc.collect()
         
         print(f"Pinecone returned {len(response.matches)} matches")
         logger.info(f"Pinecone returned {len(response.matches)} matches")

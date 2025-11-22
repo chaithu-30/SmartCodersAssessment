@@ -131,6 +131,34 @@ CORS_ALLOW_HEADERS = [
 # Exempt CSRF for API endpoints
 CSRF_TRUSTED_ORIGINS = CORS_ALLOWED_ORIGINS.copy() if CORS_ALLOWED_ORIGINS else []
 
+# Additional CORS settings for better compatibility
+CORS_PREFLIGHT_MAX_AGE = 86400  # Cache preflight for 24 hours
+CORS_ALLOW_ALL_ORIGINS = False  # Security: only allow specified origins
+
+# DRF views with @api_view automatically exempt CSRF, but ensure it's disabled for API
+# This is handled by DRF's CsrfExemptMixin in @api_view decorator
+
+# Logging configuration for debugging CORS issues
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'corsheaders': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+        },
+    },
+}
+
 # Pinecone Configuration
 PINECONE_API_KEY = os.getenv('PINECONE_API_KEY', '')
 PINECONE_INDEX_NAME = os.getenv('PINECONE_INDEX_NAME', 'html-chunks')

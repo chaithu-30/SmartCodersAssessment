@@ -115,7 +115,7 @@ That's it! The application will fetch the webpage, extract content, and search t
    - Select the `backend` folder as the root directory
    - **Environment**: Python 3
    - **Build Command**: `pip install --upgrade pip && pip install -r requirements.txt && pip uninstall -y torch && pip install torch --index-url https://download.pytorch.org/whl/cpu && python manage.py migrate`
-   - **Start Command**: `gunicorn project_settings.wsgi:application --bind 0.0.0.0:$PORT --timeout 180 --workers 1 --threads 2`
+   - **Start Command**: `gunicorn project_settings.wsgi:application --bind 0.0.0.0:$PORT --timeout 180 --workers 1 --threads 1`
 
 3. **Set Environment Variables**:
    - `DEBUG=False`
