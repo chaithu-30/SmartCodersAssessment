@@ -58,18 +58,12 @@ function ResultsDisplay({ results, url, query }) {
     const queryWords = searchQuery.toLowerCase().trim().split(/\s+/).filter(w => w.length > 2);
     if (queryWords.length === 0) return escapeHtml(code);
     
-    // First escape the HTML
     let escaped = escapeHtml(code);
     
-    // Find and highlight keywords (simple approach - highlight in escaped string)
     queryWords.forEach(word => {
-      // Create regex for the word (case-insensitive)
       const regex = new RegExp(`(${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
       
-      // Replace matches with highlighted version
       escaped = escaped.replace(regex, (match) => {
-        // Check if we're inside an HTML entity or tag by looking at context
-        // This is a simplified check - we'll highlight anyway for code display
         return `<mark class="keyword-highlight">${match}</mark>`;
       });
     });
@@ -83,15 +77,11 @@ function ResultsDisplay({ results, url, query }) {
     const queryWords = searchQuery.toLowerCase().trim().split(/\s+/).filter(w => w.length > 2);
     if (queryWords.length === 0) return escapeHtml(text);
     
-    // First escape the HTML
     let escaped = escapeHtml(text);
     
-    // Find and highlight keywords
     queryWords.forEach(word => {
-      // Create regex for the word (case-insensitive, whole word)
       const regex = new RegExp(`\\b(${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})\\b`, 'gi');
       
-      // Replace matches with highlighted version
       escaped = escaped.replace(regex, (match) => {
         return `<mark class="text-highlight">${match}</mark>`;
       });
@@ -100,28 +90,12 @@ function ResultsDisplay({ results, url, query }) {
     return escaped;
   };
 
-  const getTextPreview = (chunkText, matchingText, maxLength = 300) => {
+  const getTextPreview = (chunkText, maxLength = 300) => {
     if (!chunkText) return '';
     
-    // If we have matching text segments, use those
-    if (matchingText && matchingText.length > 0) {
-      // Combine matching segments
-      const segments = matchingText
-        .map(m => m.text || '')
-        .filter(t => t.trim().length > 0)
-        .slice(0, 3); // Limit to first 3 segments
-      
-      if (segments.length > 0) {
-        return segments.join(' ... ');
-      }
-    }
-    
-    // Otherwise, use the first part of chunk_text
     if (chunkText.length <= maxLength) {
       return chunkText;
     }
-    
-    // Try to break at sentence boundary
     const truncated = chunkText.substring(0, maxLength);
     const lastPeriod = truncated.lastIndexOf('.');
     const lastExclamation = truncated.lastIndexOf('!');
@@ -135,16 +109,12 @@ function ResultsDisplay({ results, url, query }) {
     return truncated + '...';
   };
 
-  const formatHtmlForDisplay = (htmlText, searchQuery) => {
+  const formatHtmlForDisplay = (htmlText) => {
     if (!htmlText) return '';
     
-    // If it's already HTML, format it nicely for display
     if (htmlText.includes('<') && htmlText.includes('>')) {
-      // Try to format/indent the HTML for better readability
       return formatHtmlCode(htmlText);
     }
-    
-    // Otherwise format plain text as HTML
     const lines = htmlText.split('. ');
     const htmlLines = lines.map((line, idx) => {
       const trimmed = line.trim();
@@ -165,20 +135,13 @@ function ResultsDisplay({ results, url, query }) {
   const formatHtmlCode = (html) => {
     if (!html) return '';
     
-    // Remove excessive whitespace but preserve structure
     let formatted = html.trim();
     
-    // Add newlines for better readability
-    // Add newline after closing tags
     formatted = formatted.replace(/(<\/[^>]+>)(?=\S)/g, '$1\n');
     
-    // Add newline before opening block-level tags (if not already there)
     formatted = formatted.replace(/(?<=\S)(<)(div|p|h1|h2|h3|h4|h5|h6|section|article|ul|ol|li|table|tr|td|th)/gi, '\n$1$2');
     
-    // Clean up multiple newlines
     formatted = formatted.replace(/\n{3,}/g, '\n\n');
-    
-    // Add basic indentation
     const lines = formatted.split('\n');
     let indent = 0;
     const indentSize = 2;
@@ -191,15 +154,12 @@ function ResultsDisplay({ results, url, query }) {
         continue;
       }
       
-      // Decrease indent for closing tags
       if (trimmed.startsWith('</')) {
         indent = Math.max(0, indent - indentSize);
       }
       
-      // Add line with current indent
       formattedLines.push(' '.repeat(indent) + trimmed);
       
-      // Increase indent for opening tags (except self-closing and inline elements)
       if (trimmed.startsWith('<') && !trimmed.endsWith('/>') && 
           !trimmed.match(/^<(img|br|hr|input|meta|link|area|base|col|embed|source|track|wbr|span|a|strong|em|b|i|u|code|small)/i) &&
           !trimmed.startsWith('</')) {
@@ -223,9 +183,9 @@ function ResultsDisplay({ results, url, query }) {
           const matchPercent = Math.round(result.relevance_score * 100);
           const isHtmlExpanded = expandedHtml[index];
           const isTextExpanded = expandedText[index];
-          const htmlContent = formatHtmlForDisplay(result.chunk_html || result.chunk_text, query);
-          const textPreview = getTextPreview(result.chunk_text, result.matching_text);
-          const fullText = result.chunk_text || '';
+          const htmlContent = formatHtmlForDisplay(result.chunk_text);
+          const textPreview = getTextPreview(result.chunk_text);
+          const fullText = result.chunk_text;
 
           return (
             <div key={index} className="result-card">
@@ -237,7 +197,6 @@ function ResultsDisplay({ results, url, query }) {
                 <span className="match-badge">{matchPercent}% match</span>
               </div>
 
-              {/* Text Content Preview */}
               <div className="text-preview-section">
                 <div 
                   className="text-preview"
@@ -266,7 +225,6 @@ function ResultsDisplay({ results, url, query }) {
                 )}
               </div>
 
-              {/* HTML View Button */}
               <button
                 className="view-html-button"
                 onClick={() => toggleHtml(index)}

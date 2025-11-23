@@ -1,176 +1,148 @@
-# HTML Chunk Search Application
+HTML Chunk Search
 
-A web application that searches through website content using semantic search. Enter a URL and a search query to find the most relevant content chunks.
+A simple web application that lets you search through website content using keyword-based search. Just provide a URL and a search query, and it will find the most relevant content chunks for you.
 
-## Prerequisites
+Prerequisites
 
-Before you begin, make sure you have:
+Before you get started, make sure you have these installed on your machine:
 
-- **Python 3.9+** installed
-- **Node.js 16+** and **npm** installed
+- Python 3.9 or higher - You can download it from python.org
+- Node.js 16 or higher - Get it from nodejs.org
+- Pinecone account - It's free! Sign up at pinecone.io
 
-## Local Setup
+Project Structure
 
-### Backend Setup
+Here's how the project is organized:
+
+Smart Coders assessment/
+├── backend/                    # Django backend API
+│   ├── search_api/            # Main API app
+│   │   ├── views.py           # API endpoints and search logic
+│   │   ├── urls.py            # URL routing
+│   │   └── models.py          # Database models
+│   ├── project_settings/      # Django project settings
+│   │   ├── settings.py        # Configuration
+│   │   └── urls.py            # Main URL config
+│   ├── requirements.txt       # Python dependencies
+│   └── manage.py             # Django management script
+│
+└── frontend/                  # React frontend
+    ├── src/
+    │   ├── App.js             # Main app component
+    │   ├── components/        # React components
+    │   │   ├── SearchForm.js  # Search input form
+    │   │   └── ResultsDisplay.js  # Results display
+    │   └── index.js           # Entry point
+    └── package.json           # Node dependencies
+
+Dependencies
+
+The project uses a few key libraries:
+
+Backend:
+- Django and Django REST Framework for the API
+- BeautifulSoup4 for parsing HTML content
+- Pinecone client for vector database operations
+- Gunicorn for production server (optional for local development)
+
+Frontend:
+- React for the user interface
+- Axios for making API calls
+
+All dependencies are listed in requirements.txt (backend) and package.json (frontend), so you don't need to install them manually.
+
+Local Setup
+
+Setting Up the Backend
+
+First, let's get the Django backend running:
 
 1. Navigate to the backend folder:
-```bash
-cd backend
-```
+   cd backend
 
-2. Create and activate a virtual environment:
-
-   **Windows:**
-   ```bash
+2. Create a virtual environment (this keeps your project dependencies separate):
    python -m venv venv
+
+3. Activate the virtual environment:
+   
+   On Windows:
    venv\Scripts\activate
-   ```
-
-   **Mac/Linux:**
-   ```bash
-   python -m venv venv
+   
+   On Mac or Linux:
    source venv/bin/activate
-   ```
 
-3. Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
+4. Install the required packages:
+   pip install -r requirements.txt
+   
+   This might take a minute or two as it downloads all the dependencies.
 
-4. Run database migrations:
-```bash
-python manage.py migrate
-```
+5. Set up the database:
+   python manage.py migrate
 
-5. Start the backend server:
-```bash
-python manage.py runserver
-```
+6. Start the development server:
+   python manage.py runserver
 
-The backend will run on `http://localhost:8000`
+   You should see a message saying the server is running at http://localhost:8000. Keep this terminal window open!
 
-### Frontend Setup
+Setting Up the Frontend
 
-1. Open a new terminal and navigate to the frontend folder:
-```bash
-cd frontend
-```
+Now let's get the React frontend running. Open a new terminal window (keep the backend server running):
 
-2. Install dependencies:
-```bash
-npm install
-```
+1. Navigate to the frontend folder:
+   cd frontend
+
+2. Install the dependencies:
+   npm install
+   
+   This will download all the Node.js packages needed for the frontend.
 
 3. Start the development server:
-```bash
-npm start
-```
+   npm start
 
-The frontend will open at `http://localhost:3000`
+   This should automatically open your browser to http://localhost:3000. If it doesn't, just open that URL manually.
 
-## Vector Database Configuration
+That's it! You should now have both servers running and the application ready to use.
 
-This application uses **Pinecone** as the vector database for storing and searching embeddings.
+Vector Database Configuration
 
-### Pinecone Setup
+This application uses Pinecone to store and search through the content. Think of it as a smart database that helps find relevant content quickly.
 
-1. Create a free account at [pinecone.io](https://www.pinecone.io)
+Getting Started with Pinecone
 
-2. Create a new index:
-   - Dimension: `384`
-   - Metric: `cosine`
-   - Cloud: `aws`
-   - Region: `us-east-1` (or your preferred region)
+1. Create an account:
+   - Go to pinecone.io and sign up for a free account
+   - The free tier is plenty for development and testing
 
-3. Get your API key from the Pinecone dashboard
+2. Create an index:
+   - Once you're logged in, go to your Pinecone dashboard
+   - Click "Create Index" and use these settings:
+     - Dimension: 384
+     - Metric: cosine
+     - Cloud: aws
+     - Region: us-east-1 (or pick a region closer to you)
+   - Give it a name like html-chunks
 
-4. Create a `.env` file in the `backend` directory:
-```bash
-PINECONE_API_KEY=your-api-key-here
-PINECONE_INDEX_NAME=html-chunks
-PINECONE_ENVIRONMENT=us-east-1
-```
+3. Get your API key:
+   - In the Pinecone dashboard, find your API key (usually in the "API Keys" section)
+   - Copy it - you'll need it in the next step
 
-The application will automatically create the index if it doesn't exist when you first run it.
+4. Configure the backend:
+   - In the backend folder, create a new file called .env
+   - Add these lines to it:
+     PINECONE_API_KEY=your-actual-api-key-here
+     PINECONE_INDEX_NAME=html-chunks
+     PINECONE_ENVIRONMENT=us-east-1
+   - Replace your-actual-api-key-here with the API key you copied from Pinecone
+   - Make sure the index name matches what you created in Pinecone
 
-## Usage
+5. That's it! When you start the backend server, it will automatically connect to Pinecone. If the index doesn't exist yet, the application will create it for you automatically.
 
-1. Open `http://localhost:3000` in your browser
-2. Enter a website URL (e.g., `https://en.wikipedia.org/wiki/Python`)
-3. Enter your search query
-4. Click "Search" to see the top 10 most relevant results
+Troubleshooting
 
-That's it! The application will fetch the webpage, extract content, and search through it using semantic similarity.
+If you run into any issues:
 
-## Deployment
+- Backend won't start? Make sure your virtual environment is activated and all dependencies are installed.
+- Frontend won't connect? Check that the backend server is running on port 8000.
+- Pinecone connection errors? Double-check your API key in the .env file and make sure there are no extra spaces.
 
-### Backend Deployment Options (Free Tier)
-
-#### Option 1: Render (Recommended - Free Tier)
-
-1. **Create a Render account** at [render.com](https://render.com)
-
-2. **Create a new Web Service**:
-   - Connect your GitHub repository
-   - Select the `backend` folder as the root directory
-   - **Environment**: Python 3
-   - **Build Command**: `pip install --upgrade pip && pip install -r requirements.txt && pip uninstall -y torch && pip install torch --index-url https://download.pytorch.org/whl/cpu && python manage.py migrate`
-   - **Start Command**: `gunicorn project_settings.wsgi:application --bind 0.0.0.0:$PORT --timeout 180 --workers 1 --threads 1`
-
-3. **Set Environment Variables**:
-   - `DEBUG=False`
-   - `SECRET_KEY=your-secret-key-here` (generate with `python -c "import secrets; print(secrets.token_urlsafe(50))"`)
-   - `ALLOWED_HOSTS=your-app-name.onrender.com`
-   - `PINECONE_API_KEY=your-pinecone-api-key`
-   - `PINECONE_INDEX_NAME=html-chunks`
-   - `PINECONE_ENVIRONMENT=us-east-1`
-   - `CORS_ALLOWED_ORIGINS=https://your-frontend-url.vercel.app`
-
-4. **Deploy** - Render will automatically build and deploy
-
-**Note**: Render free tier may spin down after inactivity. First build may take 10-15 minutes due to PyTorch installation.
-
-#### Option 2: Fly.io (Free Tier - 3 Apps)
-
-1. **Install Fly CLI**: `curl -L https://fly.io/install.sh | sh`
-
-2. **Login**: `fly auth login`
-
-3. **Initialize**: In the `backend` folder, run `fly launch` and follow prompts
-
-4. **Set Environment Variables** using `fly secrets set`:
-   ```bash
-   fly secrets set DEBUG=False
-   fly secrets set SECRET_KEY=your-secret-key
-   fly secrets set ALLOWED_HOSTS=your-app-name.fly.dev
-   fly secrets set PINECONE_API_KEY=your-key
-   fly secrets set PINECONE_INDEX_NAME=html-chunks
-   fly secrets set PINECONE_ENVIRONMENT=us-east-1
-   fly secrets set CORS_ALLOWED_ORIGINS=https://your-frontend-url.vercel.app
-   ```
-
-5. **Deploy**: `fly deploy`
-
-#### Option 3: Koyeb (Free Tier)
-
-1. **Create a Koyeb account** at [koyeb.com](https://www.koyeb.com)
-
-2. **Create a new App**:
-   - Connect GitHub repository
-   - Set root directory to `backend`
-   - **Build Command**: `pip install -r requirements.txt && pip uninstall -y torch && pip install torch --index-url https://download.pytorch.org/whl/cpu && python manage.py migrate`
-   - **Run Command**: `gunicorn project_settings.wsgi:application --bind 0.0.0.0:$PORT --timeout 180`
-
-3. **Set Environment Variables** in Koyeb dashboard (same as Render)
-
-4. **Deploy** - Koyeb will automatically build and deploy
-
-### Frontend Deployment (Vercel - Free)
-
-1. **Connect your GitHub repository** to Vercel
-2. **Set Root Directory** to `frontend`
-3. **Add Environment Variable**:
-   - `REACT_APP_API_URL=https://your-backend-url.onrender.com` (or your chosen backend URL)
-4. **Deploy** - Vercel will automatically build and deploy
-
-**Note**: All platforms above offer free tiers. Render is recommended for ease of use, but Fly.io and Koyeb are also good alternatives.
+Good luck, and happy searching!

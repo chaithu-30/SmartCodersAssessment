@@ -20,9 +20,8 @@ function App() {
     setQuery(searchQuery);
 
     try {
-      // Create abort controller for timeout
       const fetchController = new AbortController();
-      const fetchTimeout = setTimeout(() => fetchController.abort(), 120000); // 2 minute timeout
+      const fetchTimeout = setTimeout(() => fetchController.abort(), 120000);
 
       let fetchResponse;
       try {
@@ -56,9 +55,8 @@ function App() {
         throw new Error(errorData.error || 'Failed to fetch URL');
       }
 
-      // Create abort controller for search timeout
       const searchController = new AbortController();
-      const searchTimeout = setTimeout(() => searchController.abort(), 120000); // 2 minute timeout
+      const searchTimeout = setTimeout(() => searchController.abort(), 120000);
 
       let searchResponse;
       try {
@@ -96,7 +94,6 @@ function App() {
       setResults(searchData.results || []);
     } catch (err) {
       setError(err.message || 'An unexpected error occurred. Please check if the backend server is running.');
-      console.error('Error:', err);
       setResults([]);
     } finally {
       setLoading(false);

@@ -47,8 +47,8 @@
 
 .search-button {
   padding: 12px 32px;
-  background: #007bff;
-  color: white;
+  background: #000000;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   font-size: 1rem;
@@ -60,9 +60,9 @@
 }
 
 .search-button:hover:not(:disabled) {
-  background: #0056b3;
+  background: #333333;
   transform: translateY(-1px);
-  box-shadow: 0 4px 8px rgba(0, 123, 255, 0.3);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
 }
 
 .search-button:active:not(:disabled) {
