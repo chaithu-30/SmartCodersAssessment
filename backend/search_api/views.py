@@ -55,16 +55,16 @@ def get_pinecone_index():
             logger.info(f"Creating Pinecone index: {index_name}")
             _pinecone_client.create_index(
                 name=index_name,
-                dimension=384,
+                    dimension=384,
                 metric='cosine',
                 spec=ServerlessSpec(cloud='aws', region=environment)
-            )
+                )
             logger.info(f"Created Pinecone index: {index_name}")
         
         _pinecone_index = _pinecone_client.Index(index_name)
         logger.info(f"Connected to Pinecone: {index_name}")
         return _pinecone_index
-        
+            
     except Exception as e:
         logger.error(f"Pinecone init failed: {e}", exc_info=True)
         _pinecone_index = False
@@ -72,7 +72,7 @@ def get_pinecone_index():
 
 def clean_html(html):
     soup = BeautifulSoup(html, 'html.parser')
-
+    
     for tag in soup(['script', 'style', 'noscript', 'iframe', 'nav', 'footer', 'header', 'aside']):
         tag.decompose()
     

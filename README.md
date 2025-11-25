@@ -72,7 +72,8 @@ First, let's get the Django backend running:
    source venv/bin/activate
 
 4. Install the required packages:
-   pip install -r requirements.txt
+If you are using MAC:- pip install mac_requirements.txt
+If you are using WINDOWS :- pip install -r windows_requirements.txt
    
    This might take a minute or two as it downloads all the dependencies.
 
