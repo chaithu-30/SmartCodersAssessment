@@ -107,36 +107,41 @@ That's it! You should now have both servers running and the application ready to
 Vector Database Configuration
 
 This application uses Pinecone to store and search through the content. Think of it as a smart database that helps find relevant content quickly.
+**- you can use my .env if needed ** 
+SECRET_KEY=django-insecure-dev-key-change-in-production PINECONE_API_KEY=pcsk_WeyBo_Hg65rKaozyF5L7aQXTi4XfbXSmuH11WJxtifjApo24ND1L3oJNmzRbYsF5C5HqN 
+PINECONE_ENVIRONMENT=us-east-1 
+PINECONE_INDEX_NAME=html-chunks
 
-Getting Started with Pinecone
 
-1. Create an account:
-   - Go to pinecone.io and sign up for a free account
-   - The free tier is plenty for development and testing
+            Getting Started with Pinecone
 
-2. Create an index:
-   - Once you're logged in, go to your Pinecone dashboard
-   - Click "Create Index" and use these settings:
-     - Dimension: 384
-     - Metric: cosine
-     - Cloud: aws
-     - Region: us-east-1 (or pick a region closer to you)
-   - Give it a name like html-chunks
+            1. Create an account:
+               - Go to pinecone.io and sign up for a free account
+               - The free tier is plenty for development and testing
 
-3. Get your API key:
-   - In the Pinecone dashboard, find your API key (usually in the "API Keys" section)
-   - Copy it - you'll need it in the next step
+            2. Create an index:
+               - Once you're logged in, go to your Pinecone dashboard
+               - Click "Create Index" and use these settings:
+               - Dimension: 384
+               - Metric: cosine
+               - Cloud: aws
+               - Region: us-east-1 (or pick a region closer to you)
+               - Give it a name like html-chunks
 
-4. Configure the backend:
-   - In the backend folder, create a new file called .env
-   - Add these lines to it:
-     PINECONE_API_KEY=your-actual-api-key-here
-     PINECONE_INDEX_NAME=html-chunks
-     PINECONE_ENVIRONMENT=us-east-1
-   - Replace your-actual-api-key-here with the API key you copied from Pinecone
-   - Make sure the index name matches what you created in Pinecone
+            3. Get your API key:
+               - In the Pinecone dashboard, find your API key (usually in the "API Keys" section)
+               - Copy it - you'll need it in the next step
 
-5. That's it! When you start the backend server, it will automatically connect to Pinecone. If the index doesn't exist yet, the application will create it for you automatically.
+            4. Configure the backend:
+               - In the backend folder, create a new file called .env
+               - Add these lines to it:
+               PINECONE_API_KEY=your-actual-api-key-here
+               PINECONE_INDEX_NAME=html-chunks
+               PINECONE_ENVIRONMENT=us-east-1
+               - Replace your-actual-api-key-here with the API key you copied from Pinecone
+               - Make sure the index name matches what you created in Pinecone
+
+            5. That's it! When you start the backend server, it will automatically connect to Pinecone. If the index doesn't exist yet, the application will create it for you automatically.
 
 Troubleshooting
 
