@@ -113,35 +113,35 @@ PINECONE_ENVIRONMENT=us-east-1
 PINECONE_INDEX_NAME=html-chunks
 
 
-            Getting Started with Pinecone
+Getting Started with Pinecone
 
-            1. Create an account:
-               - Go to pinecone.io and sign up for a free account
-               - The free tier is plenty for development and testing
+1. Create an account:
+   - Go to pinecone.io and sign up for a free account
+   - The free tier is plenty for development and testing
 
-            2. Create an index:
-               - Once you're logged in, go to your Pinecone dashboard
-               - Click "Create Index" and use these settings:
-               - Dimension: 384
-               - Metric: cosine
-               - Cloud: aws
-               - Region: us-east-1 (or pick a region closer to you)
-               - Give it a name like html-chunks
+2. Create an index:
+   - Once you're logged in, go to your Pinecone dashboard
+   - Click "Create Index" and use these settings:
+     - Dimension: 384
+     - Metric: cosine
+     - Cloud: aws
+     - Region: us-east-1 (or pick a region closer to you)
+   - Give it a name like html-chunks
 
-            3. Get your API key:
-               - In the Pinecone dashboard, find your API key (usually in the "API Keys" section)
-               - Copy it - you'll need it in the next step
+3. Get your API key:
+   - In the Pinecone dashboard, find your API key (usually in the "API Keys" section)
+   - Copy it - you'll need it in the next step
 
-            4. Configure the backend:
-               - In the backend folder, create a new file called .env
-               - Add these lines to it:
-               PINECONE_API_KEY=your-actual-api-key-here
-               PINECONE_INDEX_NAME=html-chunks
-               PINECONE_ENVIRONMENT=us-east-1
-               - Replace your-actual-api-key-here with the API key you copied from Pinecone
-               - Make sure the index name matches what you created in Pinecone
+4. Configure the backend:
+   - In the backend folder, create a new file called .env
+   - Add these lines to it:
+     PINECONE_API_KEY=your-actual-api-key-here
+     PINECONE_INDEX_NAME=html-chunks
+     PINECONE_ENVIRONMENT=us-east-1
+   - Replace your-actual-api-key-here with the API key you copied from Pinecone
+   - Make sure the index name matches what you created in Pinecone
 
-            5. That's it! When you start the backend server, it will automatically connect to Pinecone. If the index doesn't exist yet, the application will create it for you automatically.
+5. That's it! When you start the backend server, it will automatically connect to Pinecone. If the index doesn't exist yet, the application will create it for you automatically.
 
 Troubleshooting
 
@@ -150,5 +150,7 @@ If you run into any issues:
 - Backend won't start? Make sure your virtual environment is activated and all dependencies are installed.
 - Frontend won't connect? Check that the backend server is running on port 8000.
 - Pinecone connection errors? Double-check your API key in the .env file and make sure there are no extra spaces.
+
+you can use my .env files if 
 
 Good luck, and happy searching!
